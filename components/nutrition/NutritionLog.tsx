@@ -59,9 +59,9 @@ function MacroBar({
 // ─── Single meal row ──────────────────────────────────────────────────────────
 
 function MealRow({
-  meal, today, onEdit,
+  meal, onEdit,
 }: {
-  meal: Meal; today: string; onEdit: (m: Meal) => void;
+  meal: Meal; onEdit: (m: Meal) => void;
 }) {
   const [state, deleteAction, pending] = useActionState<NutritionState, FormData>(
     deleteMeal,
@@ -245,7 +245,6 @@ export default function NutritionLog({ today, meals, target }: Props) {
                     <MealRow
                       key={meal.id}
                       meal={meal}
-                      today={today}
                       onEdit={handleEdit}
                     />
                   )

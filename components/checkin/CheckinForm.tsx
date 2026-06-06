@@ -67,11 +67,9 @@ function Rating({
 
 function CheckinComplete({
   checkin,
-  sleepTarget,
   onEdit,
 }: {
   checkin: Checkin;
-  sleepTarget: number;
   onEdit: () => void;
 }) {
   const score = checkin.readiness_score ?? 0;
@@ -153,7 +151,6 @@ export default function CheckinForm({ today, existing, sleepTarget }: Props) {
     return (
       <CheckinComplete
         checkin={existing}
-        sleepTarget={sleepTarget}
         onEdit={() => setEditing(true)}
       />
     );

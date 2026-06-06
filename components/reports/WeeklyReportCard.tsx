@@ -164,7 +164,7 @@ export default function WeeklyReportCard({
       </div>
 
       {/* Stats row */}
-      <div className="mt-5 grid grid-cols-5 gap-2 border-t border-zinc-800 pt-4">
+      <div className="mt-5 grid grid-cols-3 gap-x-2 gap-y-3 border-t border-zinc-800 pt-4 sm:grid-cols-5">
         <div className="text-center">
           <p className="font-mono text-lg font-bold text-white">{report.checkin_days}/7</p>
           <p className="text-[10px] text-zinc-600">Check-ins</p>

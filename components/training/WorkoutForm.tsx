@@ -68,8 +68,12 @@ export default function WorkoutForm({ defaultDate, editing, onDone }: Props) {
       if (onDone) {
         onDone();
       } else {
-        setExercises([{ ...EMPTY }]);
-        setSubmitted(false);
+        // Defer setState calls to avoid synchronous updates inside an effect
+        const reset = setTimeout(() => {
+          setExercises([{ ...EMPTY }]);
+          setSubmitted(false);
+        }, 0);
+        return () => clearTimeout(reset);
       }
     }
   }, [submitted, state, isPending, onDone]);
@@ -222,7 +226,7 @@ export default function WorkoutForm({ defaultDate, editing, onDone }: Props) {
               className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:border-emerald-400 focus:outline-none"
             />
 
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {(
                 [
                   { field: "sets"      as const, label: "Sets" },

@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
-import { forgotPassword, type AuthState } from "@/app/actions/auth";
+import { forgotPassword } from "@/app/actions/auth";
 
 type ForgotState = { error?: string; success?: boolean } | null;
 

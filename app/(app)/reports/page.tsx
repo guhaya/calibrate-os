@@ -209,9 +209,6 @@ export default async function ReportsPage() {
                   const category = weeklyCategory(score);
                   const color    = weeklyColor(score);
                   const label    = formatWeekLabel(r.week_start, r.week_end);
-                  const trainingRate = r.training_target > 0
-                    ? Math.min(Math.round((r.training_count / r.training_target) * 100), 100)
-                    : 100;
 
                   return (
                     <div
