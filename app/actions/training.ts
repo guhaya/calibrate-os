@@ -19,11 +19,19 @@ export async function createWorkout(
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) return { error: "Session expired. Please sign in again." };
 
-  const { exercises_json: exercises, date, name, notes } = parsed.data;
+  const { exercises_json: exercises, date, name, notes, activity_type, duration_minutes, session_rpe } = parsed.data;
 
   const { data: workout, error: workoutErr } = await supabase
     .from("workouts")
-    .insert({ user_id: user.id, date, name: name ?? null, notes: notes ?? null })
+    .insert({
+      user_id:          user.id,
+      date,
+      name:             name             ?? null,
+      notes:            notes            ?? null,
+      activity_type:    activity_type    ?? "strength",
+      duration_minutes: duration_minutes ?? null,
+      session_rpe:      session_rpe      ?? null,
+    })
     .select("id")
     .single();
 
@@ -67,11 +75,18 @@ export async function updateWorkout(
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) return { error: "Session expired. Please sign in again." };
 
-  const { id, exercises_json: exercises, date, name, notes } = parsed.data;
+  const { id, exercises_json: exercises, date, name, notes, activity_type, duration_minutes, session_rpe } = parsed.data;
 
   const { error: updateErr } = await supabase
     .from("workouts")
-    .update({ date, name: name ?? null, notes: notes ?? null })
+    .update({
+      date,
+      name:             name             ?? null,
+      notes:            notes            ?? null,
+      activity_type:    activity_type    ?? "strength",
+      duration_minutes: duration_minutes ?? null,
+      session_rpe:      session_rpe      ?? null,
+    })
     .eq("id", id)
     .eq("user_id", user.id);
 

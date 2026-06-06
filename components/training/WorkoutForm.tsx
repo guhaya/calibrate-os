@@ -3,6 +3,7 @@
 import { useState, useEffect, useActionState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { createWorkout, updateWorkout, type TrainingState } from "@/app/actions/training";
+import { ACTIVITY_TYPES, ACTIVITY_LABELS } from "@/lib/schemas/training";
 import type { Tables } from "@/types/database";
 
 type WorkoutWithExercises = Tables<"workouts"> & {
@@ -128,6 +129,52 @@ export default function WorkoutForm({ defaultDate, editing, onDone }: Props) {
             name="name"
             defaultValue={editing?.name ?? ""}
             placeholder="e.g. Push Day"
+            className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:border-emerald-400 focus:outline-none"
+          />
+        </div>
+      </div>
+
+      {/* Activity Type + Duration + Session RPE */}
+      <div className="grid grid-cols-3 gap-3">
+        <div>
+          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-zinc-500">
+            Type
+          </label>
+          <select
+            name="activity_type"
+            defaultValue={editing?.activity_type ?? "strength"}
+            className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 text-sm text-white focus:border-emerald-400 focus:outline-none"
+          >
+            {ACTIVITY_TYPES.map((t) => (
+              <option key={t} value={t}>{ACTIVITY_LABELS[t]}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-zinc-500">
+            Duration <span className="normal-case font-normal text-zinc-600">min</span>
+          </label>
+          <input
+            type="number"
+            name="duration_minutes"
+            min={1}
+            max={1440}
+            defaultValue={editing?.duration_minutes ?? ""}
+            placeholder="—"
+            className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:border-emerald-400 focus:outline-none"
+          />
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-zinc-500">
+            Session RPE <span className="normal-case font-normal text-zinc-600">1–10</span>
+          </label>
+          <input
+            type="number"
+            name="session_rpe"
+            min={1}
+            max={10}
+            defaultValue={editing?.session_rpe ?? ""}
+            placeholder="—"
             className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:border-emerald-400 focus:outline-none"
           />
         </div>

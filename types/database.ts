@@ -14,41 +14,56 @@ export type Database = {
     Tables: {
       ai_daily_briefs: {
         Row: {
+          bottleneck: string | null
           date: string
+          expected_outcome: string | null
           feedback: string | null
           generated_at: string | null
           id: string
+          key_insight: string | null
           model_used: string | null
           nutrition_focus: string | null
           raw_prompt: string | null
           readiness_summary: string | null
+          recommended_action: string | null
           recovery_action: string | null
+          today_status: string | null
           training_recommendation: string | null
           user_id: string
         }
         Insert: {
+          bottleneck?: string | null
           date: string
+          expected_outcome?: string | null
           feedback?: string | null
           generated_at?: string | null
           id?: string
+          key_insight?: string | null
           model_used?: string | null
           nutrition_focus?: string | null
           raw_prompt?: string | null
           readiness_summary?: string | null
+          recommended_action?: string | null
           recovery_action?: string | null
+          today_status?: string | null
           training_recommendation?: string | null
           user_id: string
         }
         Update: {
+          bottleneck?: string | null
           date?: string
+          expected_outcome?: string | null
           feedback?: string | null
           generated_at?: string | null
           id?: string
+          key_insight?: string | null
           model_used?: string | null
           nutrition_focus?: string | null
           raw_prompt?: string | null
           readiness_summary?: string | null
+          recommended_action?: string | null
           recovery_action?: string | null
+          today_status?: string | null
           training_recommendation?: string | null
           user_id?: string
         }
@@ -339,39 +354,66 @@ export type Database = {
         }
         Relationships: []
       }
-      training_sessions: {
+      weekly_reports: {
         Row: {
-          activity_type: string
-          created_at: string | null
-          date: string
-          duration_minutes: number
+          avg_readiness: number | null
+          bottlenecks: Json
+          checkin_days: number
+          checkin_rate: number
+          created_at: string
           id: string
-          notes: string | null
-          rpe: number
-          training_load: number | null
+          nutrition_compliant_days: number
+          nutrition_rate: number
+          overall_score: number
+          recommended_focus: string
+          training_count: number
+          training_target: number
           user_id: string
+          week_end: string
+          week_start: string
+          weight_end_kg: number | null
+          weight_start_kg: number | null
+          wins: Json
         }
         Insert: {
-          activity_type: string
-          created_at?: string | null
-          date: string
-          duration_minutes: number
+          avg_readiness?: number | null
+          bottlenecks?: Json
+          checkin_days: number
+          checkin_rate: number
+          created_at?: string
           id?: string
-          notes?: string | null
-          rpe: number
-          training_load?: number | null
+          nutrition_compliant_days: number
+          nutrition_rate: number
+          overall_score: number
+          recommended_focus: string
+          training_count: number
+          training_target: number
           user_id: string
+          week_end: string
+          week_start: string
+          weight_end_kg?: number | null
+          weight_start_kg?: number | null
+          wins?: Json
         }
         Update: {
-          activity_type?: string
-          created_at?: string | null
-          date?: string
-          duration_minutes?: number
+          avg_readiness?: number | null
+          bottlenecks?: Json
+          checkin_days?: number
+          checkin_rate?: number
+          created_at?: string
           id?: string
-          notes?: string | null
-          rpe?: number
-          training_load?: number | null
+          nutrition_compliant_days?: number
+          nutrition_rate?: number
+          overall_score?: number
+          recommended_focus?: string
+          training_count?: number
+          training_target?: number
           user_id?: string
+          week_end?: string
+          week_start?: string
+          weight_end_kg?: number | null
+          weight_start_kg?: number | null
+          wins?: Json
         }
         Relationships: []
       }
@@ -451,27 +493,37 @@ export type Database = {
       }
       workouts: {
         Row: {
+          activity_type: string
           created_at: string
           date: string
+          duration_minutes: number | null
           id: string
           name: string | null
           notes: string | null
+          session_rpe: number | null
+          training_load: number | null
           user_id: string
         }
         Insert: {
+          activity_type?: string
           created_at?: string
           date?: string
+          duration_minutes?: number | null
           id?: string
           name?: string | null
           notes?: string | null
+          session_rpe?: number | null
           user_id: string
         }
         Update: {
+          activity_type?: string
           created_at?: string
           date?: string
+          duration_minutes?: number | null
           id?: string
           name?: string | null
           notes?: string | null
+          session_rpe?: number | null
           user_id?: string
         }
         Relationships: []

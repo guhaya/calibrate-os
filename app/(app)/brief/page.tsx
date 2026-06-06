@@ -9,6 +9,7 @@ import {
   calibrationColor,
 } from "@/lib/performance/calibration";
 import { selectHighestLeverageAction } from "@/lib/performance/action";
+import { generateDailyBrief, type BriefContext } from "@/lib/ai/generateDailyBrief";
 import CalibrationScore from "@/components/dashboard/CalibrationScore";
 import HighestLeverageAction from "@/components/dashboard/HighestLeverageAction";
 
@@ -34,6 +35,8 @@ export default async function BriefPage() {
     workouts7Res,
     calibrationTodayRes,
     actionTodayRes,
+    aiBriefCachedRes,
+    weeklyReportRes,
   ] = await Promise.all([
     supabase
       .from("daily_checkins")
@@ -72,7 +75,7 @@ export default async function BriefPage() {
 
     supabase
       .from("profiles")
-      .select("full_name, training_days_per_week, primary_goal")
+      .select("full_name, training_days_per_week, primary_goal, sleep_target_hours")
       .eq("id", user.id)
       .single(),
 
@@ -95,6 +98,21 @@ export default async function BriefPage() {
       .eq("user_id", user.id)
       .eq("date", today)
       .maybeSingle(),
+
+    supabase
+      .from("ai_daily_briefs")
+      .select("today_status, key_insight, bottleneck, recommended_action, expected_outcome")
+      .eq("user_id", user.id)
+      .eq("date", today)
+      .not("today_status", "is", null)
+      .maybeSingle(),
+
+    supabase
+      .from("weekly_reports")
+      .select("overall_score, checkin_days, nutrition_compliant_days, training_count, training_target")
+      .eq("user_id", user.id)
+      .order("week_start", { ascending: false })
+      .limit(1),
   ]);
 
   const checkin   = checkinTodayRes.data;
@@ -104,6 +122,7 @@ export default async function BriefPage() {
   const weights   = weights7Res.data   ?? [];
   const workouts  = workouts7Res.data  ?? [];
   const profile   = profileRes.data;
+  const lastWeek  = weeklyReportRes.data?.[0] ?? null;
 
   // ── Calibration Score ──────────────────────────────────────────────────────
   let calibration = calibrationTodayRes.data;
@@ -181,8 +200,59 @@ export default async function BriefPage() {
   // DB row has pillar/priority as string — cast back since we wrote the values
   const displayAction = (dailyAction ?? computedAction) as ActionResult;
 
-  // ── Brief sections (rule-based) ────────────────────────────────────────────
+  // ── Brief sections ────────────────────────────────────────────────────────
   const firstName  = profile?.full_name?.split(" ")[0] ?? "there";
+
+  // Check cached AI brief first; if missing, generate (falls back to null on failure)
+  let aiBrief = aiBriefCachedRes.data ?? null;
+
+  if (!aiBrief) {
+    const ctx: BriefContext = {
+      firstName,
+      primaryGoal:        profile?.primary_goal ?? null,
+      trainingTarget:     profile?.training_days_per_week ?? 3,
+      calibrationScore:   calibrationResult.score,
+      calibrationComponents: {
+        checkin_component:   calibrationResult.checkin_component,
+        readiness_component: calibrationResult.readiness_component,
+        nutrition_component: calibrationResult.nutrition_component,
+        training_component:  calibrationResult.training_component,
+        weight_component:    calibrationResult.weight_component,
+      },
+      checkin,
+      sleepTarget:         profile?.sleep_target_hours ?? 8,
+      todayCalories,
+      todayProtein,
+      proteinTarget:       target?.protein_g ?? null,
+      mealsLoggedToday:    todayMeals.length,
+      workoutsThisWeek,
+      latestWeightKg:      weights[0]?.weight_kg ?? null,
+      previousWeightKg:    weights[1]?.weight_kg ?? null,
+      weeklyScore:         lastWeek?.overall_score ?? null,
+      weeklyCheckinDays:   lastWeek?.checkin_days ?? null,
+      weeklyNutritionDays: lastWeek?.nutrition_compliant_days ?? null,
+      weeklyTrainingCount: lastWeek?.training_count ?? null,
+      weeklyTrainingTarget: lastWeek?.training_target ?? null,
+    };
+
+    const generated = await generateDailyBrief(ctx);
+
+    if (generated) {
+      aiBrief = generated;
+      await supabase
+        .from("ai_daily_briefs")
+        .upsert(
+          {
+            user_id:     user.id,
+            date:        today,
+            model_used:  "claude-sonnet-4-6",
+            generated_at: new Date().toISOString(),
+            ...generated,
+          },
+          { onConflict: "user_id,date" }
+        );
+    }
+  }
   const dateLabel  = new Date(today + "T12:00:00").toLocaleDateString("en-US", {
     weekday: "long", month: "long", day: "numeric",
   });
@@ -239,9 +309,16 @@ export default async function BriefPage() {
 
         {/* Header */}
         <div className="mb-8">
-          <p className="text-xs font-semibold uppercase tracking-widest text-emerald-400">
-            Daily Brief
-          </p>
+          <div className="flex items-center gap-3">
+            <p className="text-xs font-semibold uppercase tracking-widest text-emerald-400">
+              Daily Brief
+            </p>
+            {aiBrief && (
+              <span className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-400">
+                Generated by Claude
+              </span>
+            )}
+          </div>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight text-white">
             {firstName}&rsquo;s Brief
           </h1>
@@ -253,11 +330,17 @@ export default async function BriefPage() {
           <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
             Today&rsquo;s Status
           </p>
-          <p className="mt-2 text-sm text-zinc-300">{statusText}</p>
-          {todayCalories > 0 && (
-            <p className="mt-1 text-sm text-zinc-400">
-              Nutrition: {Math.round(todayCalories)} kcal · {Math.round(todayProtein)}g protein logged so far.
-            </p>
+          {aiBrief ? (
+            <p className="mt-2 text-sm leading-relaxed text-zinc-300">{aiBrief.today_status}</p>
+          ) : (
+            <>
+              <p className="mt-2 text-sm text-zinc-300">{statusText}</p>
+              {todayCalories > 0 && (
+                <p className="mt-1 text-sm text-zinc-400">
+                  Nutrition: {Math.round(todayCalories)} kcal · {Math.round(todayProtein)}g protein logged so far.
+                </p>
+              )}
+            </>
           )}
         </section>
 
@@ -266,7 +349,9 @@ export default async function BriefPage() {
           <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
             Key Insight
           </p>
-          <p className="mt-2 text-sm text-zinc-300">{keyInsight}</p>
+          <p className="mt-2 text-sm leading-relaxed text-zinc-300">
+            {aiBrief ? aiBrief.key_insight : keyInsight}
+          </p>
         </section>
 
         {/* 3. Bottleneck */}
@@ -274,26 +359,43 @@ export default async function BriefPage() {
           <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
             Bottleneck
           </p>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-base font-semibold text-white">{bottleneck.label}</span>
-            <span className={`font-mono text-sm font-bold ${color}`}>{bottleneck.score}/100</span>
-          </div>
-          <p className="mt-1 text-sm text-zinc-400">
-            This is the pillar dragging your Calibration Score down most. Fix this first.
-          </p>
+          {aiBrief ? (
+            <p className="mt-2 text-sm leading-relaxed text-zinc-300">{aiBrief.bottleneck}</p>
+          ) : (
+            <>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-base font-semibold text-white">{bottleneck.label}</span>
+                <span className={`font-mono text-sm font-bold ${color}`}>{bottleneck.score}/100</span>
+              </div>
+              <p className="mt-1 text-sm text-zinc-400">
+                This is the pillar dragging your Calibration Score down most. Fix this first.
+              </p>
+            </>
+          )}
         </section>
 
-        {/* 4. Recommended Action (Highest Leverage Action card) */}
-        <div className="mt-4">
-          <HighestLeverageAction action={displayAction} />
-        </div>
+        {/* 4. Recommended Action */}
+        {aiBrief ? (
+          <section className="mt-4 rounded-xl border border-zinc-800 bg-zinc-900 p-5">
+            <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
+              Recommended Action
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-zinc-300">{aiBrief.recommended_action}</p>
+          </section>
+        ) : (
+          <div className="mt-4">
+            <HighestLeverageAction action={displayAction} />
+          </div>
+        )}
 
         {/* 5. Expected Outcome */}
         <section className="mt-4 rounded-xl border border-zinc-800 bg-zinc-900 p-5">
           <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
             Expected Outcome
           </p>
-          <p className="mt-2 text-sm text-zinc-300">{outcomeText}</p>
+          <p className="mt-2 text-sm leading-relaxed text-zinc-300">
+            {aiBrief ? aiBrief.expected_outcome : outcomeText}
+          </p>
         </section>
 
         {/* Calibration Score — full breakdown at bottom for reference */}

@@ -16,6 +16,7 @@ import ReadinessCard from "@/components/dashboard/ReadinessCard";
 import MacroSummary from "@/components/dashboard/MacroSummary";
 import WeightSummary from "@/components/dashboard/WeightSummary";
 import QuickActions from "@/components/dashboard/QuickActions";
+import PerformanceCharts from "@/components/charts/PerformanceCharts";
 
 export const metadata: Metadata = { title: "Dashboard — CALIBRATE OS" };
 
@@ -29,6 +30,13 @@ export default async function DashboardPage() {
   const window7 = buildWindowDates(today, 7);   // [today, yesterday, ..., 6 days ago]
   const oldest  = window7[window7.length - 1];  // 6 days ago
 
+  // 90-day window for trend charts
+  const oldest90 = (() => {
+    const d = new Date(today + "T12:00:00");
+    d.setDate(d.getDate() - 89);
+    return d.toISOString().split("T")[0];
+  })();
+
   // ── All queries in parallel ───────────────────────────────────────────────
   const [
     checkinTodayRes,
@@ -40,6 +48,10 @@ export default async function DashboardPage() {
     workouts7Res,
     calibrationTodayRes,
     actionTodayRes,
+    weights90Res,
+    calibrations90Res,
+    meals90Res,
+    workouts90Res,
   ] = await Promise.all([
     // Today's check-in (for readiness card)
     supabase
@@ -114,6 +126,36 @@ export default async function DashboardPage() {
       .eq("user_id", user.id)
       .eq("date", today)
       .maybeSingle(),
+
+    // 90-day weight logs for trend chart
+    supabase
+      .from("weight_logs")
+      .select("date, weight_kg")
+      .eq("user_id", user.id)
+      .gte("date", oldest90)
+      .order("date", { ascending: true }),
+
+    // 90-day calibration scores for trend chart
+    supabase
+      .from("calibration_scores")
+      .select("date, score")
+      .eq("user_id", user.id)
+      .gte("date", oldest90)
+      .order("date", { ascending: true }),
+
+    // 90-day nutrition logs for trend chart
+    supabase
+      .from("nutrition_logs")
+      .select("date, protein_g")
+      .eq("user_id", user.id)
+      .gte("date", oldest90),
+
+    // 90-day workouts for trend chart
+    supabase
+      .from("workouts")
+      .select("date")
+      .eq("user_id", user.id)
+      .gte("date", oldest90),
   ]);
 
   // ── Derive data ───────────────────────────────────────────────────────────
@@ -124,6 +166,12 @@ export default async function DashboardPage() {
   const weights   = weights7Res.data    ?? [];
   const workouts  = workouts7Res.data   ?? [];
   const profile   = profileRes.data;
+
+  // 90-day chart data
+  const weights90      = weights90Res.data      ?? [];
+  const calibrations90 = calibrations90Res.data ?? [];
+  const meals90        = meals90Res.data         ?? [];
+  const workouts90     = workouts90Res.data      ?? [];
 
   const streak           = computeStreak(checkins.map((c) => c.date), today);
   const firstName        = profile?.full_name?.split(" ")[0] ?? "there";
@@ -275,6 +323,19 @@ export default async function DashboardPage() {
             latest={latestWeight}
             previous={previousWeight}
             date={latestWeightDate}
+          />
+        </div>
+
+        {/* Performance Trend Charts */}
+        <div className="mt-8">
+          <PerformanceCharts
+            weightLogs={weights90}
+            calibrations={calibrations90}
+            nutritionLogs={meals90}
+            workoutDates={workouts90.map((w) => w.date)}
+            proteinTarget={target?.protein_g ?? null}
+            trainingTarget={profile?.training_days_per_week ?? 3}
+            today={today}
           />
         </div>
 

@@ -8,16 +8,18 @@ import {
   Dumbbell,
   Leaf,
   Zap,
+  BarChart2,
   LogOut,
 } from "lucide-react";
 import { signOut } from "@/app/actions/auth";
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard",  icon: LayoutDashboard },
-  { href: "/checkin",   label: "Check-In",   icon: CheckSquare },
-  { href: "/training",  label: "Training",   icon: Dumbbell },
-  { href: "/nutrition", label: "Nutrition",  icon: Leaf },
+  { href: "/dashboard", label: "Dashboard",   icon: LayoutDashboard },
+  { href: "/checkin",   label: "Check-In",    icon: CheckSquare },
+  { href: "/training",  label: "Training",    icon: Dumbbell },
+  { href: "/nutrition", label: "Nutrition",   icon: Leaf },
   { href: "/brief",     label: "Daily Brief", icon: Zap },
+  { href: "/reports",   label: "Reports",     icon: BarChart2 },
 ];
 
 export default function AppNav() {
