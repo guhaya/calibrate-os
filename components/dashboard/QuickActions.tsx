@@ -10,11 +10,12 @@ type Action = {
 };
 
 type Props = {
-  checkedIn:  boolean;
-  mealCount:  number;
+  checkedIn:         boolean;
+  mealCount:         number;
+  workoutsThisWeek:  number;
 };
 
-export default function QuickActions({ checkedIn, mealCount }: Props) {
+export default function QuickActions({ checkedIn, mealCount, workoutsThisWeek }: Props) {
   const actions: Action[] = [
     {
       href:  "/checkin",
@@ -34,7 +35,10 @@ export default function QuickActions({ checkedIn, mealCount }: Props) {
       href:  "/training",
       icon:  Dumbbell,
       label: "Training",
-      sub:   "Log a workout",
+      sub:   workoutsThisWeek > 0
+        ? `${workoutsThisWeek} workout${workoutsThisWeek === 1 ? "" : "s"} this week`
+        : "Log a workout",
+      done:  workoutsThisWeek > 0,
     },
     {
       href:  "/brief",

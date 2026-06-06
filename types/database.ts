@@ -7,8 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
@@ -52,6 +50,81 @@ export type Database = {
           readiness_summary?: string | null
           recovery_action?: string | null
           training_recommendation?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      calibration_scores: {
+        Row: {
+          checkin_component: number
+          created_at: string
+          date: string
+          id: string
+          nutrition_component: number
+          readiness_component: number
+          score: number
+          training_component: number
+          user_id: string
+          weight_component: number
+        }
+        Insert: {
+          checkin_component: number
+          created_at?: string
+          date?: string
+          id?: string
+          nutrition_component: number
+          readiness_component: number
+          score: number
+          training_component: number
+          user_id: string
+          weight_component: number
+        }
+        Update: {
+          checkin_component?: number
+          created_at?: string
+          date?: string
+          id?: string
+          nutrition_component?: number
+          readiness_component?: number
+          score?: number
+          training_component?: number
+          user_id?: string
+          weight_component?: number
+        }
+        Relationships: []
+      }
+      daily_actions: {
+        Row: {
+          action: string
+          created_at: string
+          date: string
+          expected_impact: string
+          id: string
+          pillar: string
+          priority: string
+          reason: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          date?: string
+          expected_impact: string
+          id?: string
+          pillar: string
+          priority: string
+          reason: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          date?: string
+          expected_impact?: string
+          id?: string
+          pillar?: string
+          priority?: string
+          reason?: string
           user_id?: string
         }
         Relationships: []
@@ -420,7 +493,6 @@ export type Database = {
 }
 
 type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
-
 type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
